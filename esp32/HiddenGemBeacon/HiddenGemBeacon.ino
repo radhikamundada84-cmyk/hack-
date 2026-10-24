@@ -1,0 +1,39 @@
+#include <NimBLEDevice.h>
+
+// The website filters for BLE devices whose advertised name starts with this.
+static const char* DEVICE_NAME = "HiddenGem-ESP32";
+static const char* SERVICE_UUID = "f3641400-00b0-4240-ba50-05ca45bf8abc";
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Starting Hidden Gem BLE beacon...");
+
+  // Start a connectable BLE GATT server. The website only uses the connection
+  // to unlock the experience; no checkpoint or personal data is sent.
+  NimBLEDevice::init(DEVICE_NAME);
+  NimBLEServer* server = NimBLEDevice::createServer();
+  server->advertiseOnDisconnect(true);
+
+  // A primary service makes this a GATT server. No characteristic is needed
+  // because the website does not read or write beacon data.
+  NimBLEService* service = server->createService(SERVICE_UUID);
+  service->start();
+
+  // Explicitly advertise the name because NimBLE 2.x does not include it by
+  // default. Put the local name in scan response data for browser discovery.
+  NimBLEAdvertising* advertising = NimBLEDevice::getAdvertising();
+  advertising->setName(DEVICE_NAME);
+  advertising->addServiceUUID(SERVICE_UUID);
+  advertising->enableScanResponse(true);
+
+  if (advertising->start()) {
+    Serial.println("Advertising as HiddenGem-ESP32. Ready for a browser connection.");
+  } else {
+    Serial.println("Could not start BLE advertising.");
+  }
+}
+
+void loop() {
+  delay(1000);
+}
+
