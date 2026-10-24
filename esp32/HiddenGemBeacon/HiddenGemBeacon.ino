@@ -34,9 +34,14 @@ void setup() {
   // Explicitly advertise the name because NimBLE 2.x does not include it by
   // default. Put the local name in scan response data for browser discovery.
   NimBLEAdvertising* advertising = NimBLEDevice::getAdvertising();
-  advertising->setName(DEVICE_NAME);
-  advertising->addServiceUUID(SERVICE_UUID);
-  advertising->enableScanResponse(true);
+  advertising->clearData();
+  if (!advertising->setName(DEVICE_NAME)) {
+    Serial.println("Could not add the BLE device name to the advertisement.");
+  }
+  // Keep the name in the primary advertisement. The website connects by name
+  // and does not need the service UUID in the advertisement; adding both can
+  // exceed the legacy BLE packet's 31-byte payload.
+  advertising->enableScanResponse(false);
 
   if (advertising->start()) {
     Serial.println("Advertising as HiddenGem-ESP32. Ready for a browser connection.");
